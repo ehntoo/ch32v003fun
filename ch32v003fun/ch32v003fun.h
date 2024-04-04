@@ -12529,7 +12529,7 @@ Examples:
 
 // XW opcodes
 #define XW_OP_LBUSP 0b1000000000000000
-#define XW_OP_STSP  0b1000000001000000
+#define XW_OP_SBSP  0b1000000001000000
 
 #define XW_OP_LHUSP 0b1000000000100000
 #define XW_OP_SHSP  0b1000000001100000
@@ -12540,24 +12540,52 @@ Examples:
 #define XW_OP_LHU   0b0010000000000010
 #define XW_OP_SH    0b1010000000000010
 
-// The two different XW encodings supported at the moment.
-#define XW_ENCODE1(OP, R1, R2, IMM) ASM_ASSERT((IMM) >= 0 && (IMM) < 32); .2byte ((OP) | (REG2I(R1) << 2) | (REG2I(R2) << 7) | \
-	(((IMM) & 0b1) << 12) | (((IMM) & 0b110) << (5 - 1)) | (((IMM) & 0b11000) << (10 - 3)))
+// The different known XW encodings
+#define XW_ENCODE_b(OP, R1, R2, IMM) \
+	ASM_ASSERT((IMM) >= 0 && (IMM) < 32); \
+	.2byte ((OP) | \
+		(REG2I(R1) << 2) | (REG2I(R2) << 7) | \
+		(((IMM) & 0b1) << 12) | (((IMM) & 0b110) << (5 - 1)) | (((IMM) & 0b11000) << (10 - 3)))
 
-#define XW_ENCODE2(OP, R1, R2, IMM) ASM_ASSERT((IMM) >= 0 && (IMM) < 32); .2byte ((OP) | (REG2I(R1) << 2) | (REG2I(R2) << 7) | \
-	(((IMM) & 0b11) << 5) | (((IMM) & 0b11100) << (10 - 2))
+#define XW_ENCODE_B(OP, R1, R2, IMM) \
+	ASM_ASSERT((IMM) >= 0 && (IMM) < 32); \
+	.2byte ((OP) | \
+		(REG2I(R1) << 2) | (REG2I(R2) << 7) | \
+		(((IMM) & 0b11) << 5) | (((IMM) & 0b11100) << (10 - 2))
+
+#define XW_ENCODE_h(OP, R1, IMM) \
+	ASM_ASSERT((IMM) >= 0 && (IMM) < 16); \
+	.2byte ((OP) | \
+		(REG2I(R1) << 2) | \
+		(((IMM) & 0b111) << 8) | (((IMM) & 0b1000) << (7 - 3)))
+
+#define XW_ENCODE_H(OP, R1, IMM) \
+	ASM_ASSERT((IMM) >= 0 && (IMM) < 16); \
+	.2byte ((OP) | (REG2I(R1) << 2) | (((IMM) & 0b1111) << 7))
 
 // Compressed load byte, zero-extend result
-#define XW_C_LBU(RD, RS, IMM) XW_ENCODE1(XW_OP_LBU, RD, RS, IMM)
+#define XW_C_LBU(RD, RS, IMM) XW_ENCODE_b(XW_OP_LBU, RD, RS, IMM)
 
 // Compressed store byte
-#define XW_C_SB(RS1, RS2, IMM) XW_ENCODE1(XW_OP_SB, RS1, RS2, IMM)
+#define XW_C_SB(RS1, RS2, IMM) XW_ENCODE_b(XW_OP_SB, RS1, RS2, IMM)
 
 // Compressed load half, zero-extend result
-#define XW_C_LHU(RD, RS, IMM) ASM_ASSERT(((IMM) & 1) == 0); XW_ENCODE2(XW_OP_LHU, RD, RS, ((IMM) >> 1)))
+#define XW_C_LHU(RD, RS, IMM) ASM_ASSERT(((IMM) & 1) == 0); XW_ENCODE_B(XW_OP_LHU, RD, RS, ((IMM) >> 1))
 
 // Compressed store half
-#define XW_C_SH(RS1, RS2, IMM)  ASM_ASSERT(((IMM) & 1) == 0); XW_ENCODE2(XW_OP_SH, RS1, RS2, ((IMM) >> 1)))
+#define XW_C_SH(RS1, RS2, IMM)  ASM_ASSERT(((IMM) & 1) == 0); XW_ENCODE_B(XW_OP_SH, RS1, RS2, ((IMM) >> 1))
+
+// Compressed load byte relative to stack, zero-extend result
+#define XW_C_LBUSP(RD, IMM) XW_ENCODE_h(XW_OP_LBUSP, RD, IMM)
+
+// Compressed store byte relative to stack
+#define XW_C_SBSP(RS1, IMM) XW_ENCODE_h(XW_OP_SBSP, RS1, IMM)
+
+// Compressed load half relative to stack, zero-extend result
+#define XW_C_LHUSP(RD, IMM) ASM_ASSERT(((IMM) & 1) == 0); XW_ENCODE_H(XW_OP_LBUSP, RD, ((IMM) >> 1))
+
+// Compressed store half relative to stack
+#define XW_C_SHSP(RS1, IMM) ASM_ASSERT(((IMM) & 1) == 0); XW_ENCODE_H(XW_OP_SHSP, RS1, ((IMM) >> 1))
 
 #endif
 
